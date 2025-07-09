@@ -4,6 +4,8 @@
  */
 package br.edu.compras02.view;
 
+import br.edu.compras02.controller.ClienteController;
+import br.edu.compras02.controller.ProdutoController;
 import br.edu.compras02.model.Cliente;
 import br.edu.compras02.model.Produto;
 import br.edu.compras02.util.InicializarComponentes;
@@ -28,6 +30,9 @@ public class Principal extends javax.swing.JFrame {
     private ArrayList<Produto> listaDeProdutos = new ArrayList<>();
     private int index = -1;
     private boolean editar = false;
+    
+    ProdutoController produtoController = new ProdutoController();
+    ClienteController clienteController = new ClienteController();
     
     public Principal() {
         initComponents();
@@ -472,24 +477,22 @@ public class Principal extends javax.swing.JFrame {
 
     private void btnSalvarClienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalvarClienteActionPerformed
         
-        if(!editar){
-            // O Try vai executar o bloco de código
-            try{
-                Cliente c = retornaCliente();
-                listaDeClientes.add(c);
-                atualizaTabela(tblListaDeClientes, listaDeClientes);
-                System.out.println(listaDeClientes.toString());
-                limparCampos();
-            // o Catch vai pegar o erro
-            }catch(DateTimeParseException ex){// a "Exception" vai retornar qualquer tipo de erro
-                JOptionPane.showMessageDialog(this, "Coloque uma data válida");
-            }catch(Exception ex){
-                System.out.println(ex);
-            }   
-        }else{
-            editarCliente(index);
-            atualizaTabela(tblListaDeClientes, listaDeClientes);
+        try {
+            Cliente c = retornaCliente();
+            
+            if (!editar) {
+                clienteController.adicionarCliente(c);
+            }else{
+                clienteController.editarCliente(index, c);
+            }
+            
+            atualizaTabela(tblListaDeClientes, clienteController.getListaDeClientes());
+            limparCampos();
+            editar= false;
             index = -1;
+            
+        } catch (Exception e) {
+            System.out.println(e);
         }
 
         
@@ -503,28 +506,27 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_btnLimparClientesActionPerformed
 
     private void btnExcluirClienteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcluirClienteActionPerformed
-        deletarCliente(index);
+        clienteController.excluirCliente(index);
+        atualizaTabela(tblListaDeClientes, clienteController.getListaDeClientes());
     }//GEN-LAST:event_btnExcluirClienteActionPerformed
 
     private void btnSalvar2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSalvar2ActionPerformed
-        if(!editar){
-            // O Try vai executar o bloco de código
-            try{
-                Produto p = retornaProduto();
-                listaDeProdutos.add(p);
-                atualizaTabelaProduto(tblListaDeProdutos, listaDeProdutos);
-                System.out.println(listaDeProdutos.toString());
-                limparCampos();
-            // o Catch vai pegar o erro
-            }catch(DateTimeParseException ex){// a "Exception" vai retornar qualquer tipo de erro
-                JOptionPane.showMessageDialog(this, "Coloque uma data válida");
-            }catch(Exception ex){
-                System.out.println(ex);
-            }   
-        }else{
-            editarProdutos(index);
-            atualizaTabelaProduto(tblListaDeProdutos, listaDeProdutos);
+        try {
+            Produto p = retornaProduto();
+            
+            if (!editar) {
+                produtoController.adicionarProduto(p);
+            }else{
+                produtoController.editarProduto(index, p);
+            }
+            
+            atualizaTabelaProduto(tblListaDeProdutos, produtoController.getListaDeProdutos());
+            limparCampos();
+            editar= false;
             index = -1;
+            
+        } catch (Exception e) {
+            System.out.println(e);
         }
     }//GEN-LAST:event_btnSalvar2ActionPerformed
 
@@ -539,7 +541,8 @@ public class Principal extends javax.swing.JFrame {
     }//GEN-LAST:event_jButton2ActionPerformed
 
     private void btnExcluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExcluirActionPerformed
-        deletarProduto(index);
+        produtoController.excluirProduto(index);
+        atualizaTabelaProduto(tblListaDeProdutos, produtoController.getListaDeProdutos());
     }//GEN-LAST:event_btnExcluirActionPerformed
 
     /**
@@ -720,7 +723,7 @@ public class Principal extends javax.swing.JFrame {
     
     private void recuperaCliente(int index) {
         
-        Cliente c = listaDeClientes.get(index);
+        Cliente c = clienteController.getCliente(index);
         
         txtNomeCliente.setText(c.getNome());
         ftdCpfCliente.setText(c.getCpf());
@@ -739,81 +742,13 @@ public class Principal extends javax.swing.JFrame {
     }
     
     private void recuperaProduto(int index){
-        Produto p = listaDeProdutos.get(index);
+        Produto p = produtoController.getProduto(index);
         txfNome.setText(p.getNome());
         txfPreco.setText(String.valueOf(p.getPreco()));
         txfQuantidade.setText(String.valueOf(p.getQuantidade()));
         txfCodigo.setText(String.valueOf(p.getCodigo()));
     }
-
-    private void editarCliente(int index) {
-        Cliente c = listaDeClientes.get(index);
-        
-        String nomeCompleto = txtNomeCliente.getText();
-        String telefone = ftdTelefoneCliente.getText();
-        String cpf = ftdCpfCliente.getText();
-        
-        String sexo;
-        if(rdbMasculinoCliente.isSelected()){
-            sexo = "Masculino";
-        }else if(rdbFemininoCliente.isSelected()){
-            sexo = "Feminino";
-        }else{
-            sexo = "Indefinido";
-        }
-        
-        String data = ftdDataNascimentoCliente.getText();
-        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate dataNascimento = LocalDate.parse(data, dtf);
-       
-        c.setNome(nomeCompleto);
-        c.setTelefone(telefone);
-        c.setCpf(cpf);
-        c.setSexo(sexo);
-        c.setDataDeNascimento(dataNascimento);
-       
-    }
     
-    private void editarProdutos(int index){
-        Produto p = listaDeProdutos.get(index);
-        
-        String nome = txfNome.getText();
-        int quantidade = Integer.parseInt(txfQuantidade.getText());
-        double preco = Double.parseDouble(txfPreco.getText());
-        int codigo = Integer.parseInt(txfCodigo.getText());
-        
-        p.setNome(nome);
-        p.setCodigo(codigo);
-        p.setPreco(preco);
-        p.setQuantidade(quantidade);
-        
-    }
-
-    private void deletarCliente(int i) {
-        if(i > -1){
-            listaDeClientes.remove(i);
-            atualizaTabela(tblListaDeClientes, listaDeClientes);
-            limparCampos();
-            editar = false;
-            index = -1;
-        }else{
-            JOptionPane.showMessageDialog(this, "Não foi selecionado nenhum cliente para exclusão");
-        }
-    }
-    
-    private void deletarProduto(int i) {
-        if(i > -1) {
-            listaDeProdutos.remove(i);
-            atualizaTabelaProduto(tblListaDeProdutos, listaDeProdutos);
-            limparCampos();
-            editar = false;
-            index = -1;
-        }else{
-            JOptionPane.showMessageDialog(this, "Não foi selecionado nenhum cliente para exclusão");
-        }
-    }
-
-
     private Produto retornaProduto(){
         
         String nome = txfNome.getText();
